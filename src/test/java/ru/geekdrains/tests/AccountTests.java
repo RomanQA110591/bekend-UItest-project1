@@ -1,48 +1,41 @@
 package ru.geekdrains.tests;
 
-import io.restassured.RestAssured;
-import io.restassured.http.Method;
 import io.restassured.response.Response;
-import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.BeforeAll;
+import io.restassured.specification.ResponseSpecification;
 import org.junit.jupiter.api.Test;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Properties;
+import ru.geekbrains.AccountResponse;
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static ru.geekbrains.Endpoints.GET_ACCOUNT;
 
-public class AccountTests extends BaseTest{
+public class AccountTests extends BaseTest {
+    ResponseSpecification accountResponseSpec;
 
     @Test
     void getAccountPositiveTest() {
-        given()
-                .header("Authorization", token)
-                .log()
-                .method()
-                .log()
-                .uri()
-                .when()
-                .get( "account/{username}", username)
+        accountResponseSpec = positiveResponseSpecification
+                .expect()
+                .body("data.url", equalTo(username));
+
+        AccountResponse response = given(requestSpecification, accountResponseSpec)
+                .get(GET_ACCOUNT, username)
                 .prettyPeek()
                 .then()
-                .statusCode(200)
-                .body("success", CoreMatchers.is(true))
-                .body("data.url", equalTo(username));
+                .extract()
+                .as(AccountResponse.class);
+        assertThat(response.getData().getId(), equalTo(userId));
     }
 
     @Test
     void getAccountSettingsTest() {
         Response response = given()
-                .header("Authorization", "Bearer 81ed217eee6d991be324edc8754a07e4ce686bb9")
+                .header("Authorization", token)
                 .expect()
-                .body("success", CoreMatchers.is(true))
-                .body("data.account_url", equalTo("testprogmath"))
+                .body("success", is(true))
+                .body("data.account_url", equalTo(username))
                 .statusCode(200)
                 .when()
                 .get("https://api.imgur.com/3/account/testprogmath/settings")
